@@ -75,13 +75,19 @@ module WashOut
 
     def call(env)
       @controller = @controller_name.constantize
-
+      
+      Rails.logger.info '--- ENV ---'
+      Rails.logger.info env
       soap_action     = parse_soap_action(env)
       return [200, {}, ['OK']] if soap_action.blank?
 
       soap_parameters = parse_soap_parameters(env)
-
+      Rails.logger.info '--- SOAP PARAMETERS ---'
+      Rails.logger.info soap_parameters
       action_spec = controller.soap_actions[soap_action]
+
+      Rails.logger.info '--- ACTION SPEC ---'
+      Rails.logger.info action_spec
 
       if action_spec
         action = action_spec[:to]
