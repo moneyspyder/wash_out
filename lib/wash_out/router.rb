@@ -6,6 +6,7 @@ module WashOut
   class Router
     def initialize(controller_name)
       @controller_name = "#{controller_name.to_s}_controller".camelize
+      @controller = @controller_name.constantize
     end
 
     def controller
@@ -13,10 +14,10 @@ module WashOut
     end
 
     def parse_soap_action(env)
+
       return env['wash_out.soap_action'] if env['wash_out.soap_action']
 
-      soap_action = controller.soap_config.soap_action_routing ? env['HTTP_SOAPACTION'].to_s.gsub(/^"(.*)"$/, '\1')
-                                                               : ''
+      soap_action = controller.soap_config.soap_action_routing ? parse_soap_action(env) : ''
 
       if soap_action.blank?
         parsed_soap_body = nori(controller.soap_config.snakecase_input).parse(soap_body env)
@@ -73,6 +74,10 @@ module WashOut
       env['wash_out.soap_data']
     end
 
+    def parse_soap_action(env)
+      env['HTTP_SOAPACTION'].to_s.gsub(/^"(.*)"$/, '\1').split('/').last
+    end
+
     def call(env)
       @controller = @controller_name.constantize
       
@@ -84,6 +89,8 @@ module WashOut
       soap_parameters = parse_soap_parameters(env)
       Rails.logger.info '--- SOAP PARAMETERS ---'
       Rails.logger.info soap_parameters
+      Rails.logger.info '--- SOAP ACTION ---'
+      Rails.logger.info soap_action
       action_spec = controller.soap_actions[soap_action]
 
       Rails.logger.info '--- ACTION SPEC ---'
